@@ -107,13 +107,36 @@ def menu():
         if opcion == "1":
             cliente = input("Nombre del Cliente: ")
             direccion = input("Dirección de entrega: ")
-            print("Zonas válidas: Centro, Norte, Sur, Este, Oeste")
-            zona = input("Zona: ").strip().capitalize()
-            try:
-                total_prod = float(input("Monto total de los productos: $"))
-                sistema.registrar_pedido(cliente, direccion, zona, total_prod)
-            except ValueError:
-                print("❌ Monto inválido. Intente de nuevo.")
+            
+            # Submenú numérico para las zonas de Resistencia
+            print("\n--- Seleccione la Zona de Entrega ---")
+            print("1. Centro")
+            print("2. Norte")
+            print("3. Sur")
+            print("4. Este")
+            print("5. Oeste")
+            
+            opcion_zona = input("Seleccione una opción (1-5): ").strip()
+            
+            # Diccionario para mapear el número al nombre de la zona real
+            mapa_zonas = {
+                "1": "Centro",
+                "2": "Norte",
+                "3": "Sur",
+                "4": "Este",
+                "5": "Oeste"
+            }
+            
+            # Validamos si la opción de la zona es correcta antes de avanzar
+            if opcion_zona in mapa_zonas:
+                zona = mapa_zonas[opcion_zona]
+                try:
+                    total_prod = float(input("Monto total de los productos: $"))
+                    sistema.registrar_pedido(cliente, direccion, zona, total_prod)
+                except ValueError:
+                    print("❌ Monto inválido. Intente de nuevo.")
+            else:
+                print("❌ Opción de zona incorrecta. Pedido no registrado.")
 
         elif opcion == "2":
             sistema.mostrar_pedidos()
@@ -121,11 +144,33 @@ def menu():
         elif opcion == "3":
             try:
                 id_p = int(input("Ingrese el ID del pedido: "))
-                print("Estados: Pendiente, En Camino, Entregado, Cancelado")
-                nuevo_est = input("Nuevo estado: ").strip().title()
-                sistema.actualizar_estado(id_p, nuevo_est)
+                
+                # Submenú numérico para los estados
+                print("\n--- Seleccione el nuevo estado ---")
+                print("1. Pendiente")
+                print("2. En Camino")
+                print("3. Entregado")
+                print("4. Cancelado")
+                
+                opcion_estado = input("Seleccione una opción (1-4): ").strip()
+                
+                # Diccionario para mapear el número al texto real
+                mapa_estados = {
+                    "1": "Pendiente",
+                    "2": "En Camino",
+                    "3": "Entregado",
+                    "4": "Cancelado"
+                }
+                
+                # Validamos si la opción ingresada existe en nuestro mapa
+                if opcion_estado in mapa_estados:
+                    nuevo_est = mapa_estados[opcion_estado]
+                    sistema.actualizar_estado(id_p, nuevo_est)
+                else:
+                    print("❌ Opción de estado incorrecta. Debe ser un número del 1 al 4.")
+                    
             except ValueError:
-                print("❌ ID inválido.")
+                print("❌ ID inválido. Debe ser un número entero.")
 
         elif opcion == "4":
             sistema.mostrar_estadisticas()
