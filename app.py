@@ -1,6 +1,6 @@
 import datetime
 
-class Pedido:
+class Pedido:  #asi se define una clase en python 
     def __init__(self, id_pedido, cliente, direccion, zona, total_productos):
         self.id_pedido = id_pedido
         self.cliente = cliente
@@ -92,11 +92,10 @@ def menu():
     sistema = GestionDelivery()
     
     # Datos de prueba iniciales para no arrancar de cero al testear
-    sistema.registrar_pedido("Juan Pérez", "Av. Alberdi 450", "Centro", 4500)
-    sistema.registrar_pedido("María Gómez", "Av. Castelli 1200", "Sur", 6200)
+    
 
     while True:
-        print("\n--- SISTEMA DE DELIVERY UTN FRRE ---")
+        print("\n--- SISTEMA DE DELIVERY ---")
         print("1. Registrar Nuevo Pedido")
         print("2. Mostrar Todos los Pedidos")
         print("3. Cambiar Estado de un Pedido")
@@ -132,7 +131,7 @@ def menu():
             sistema.mostrar_estadisticas()
 
         elif opcion == "5":
-            print("\n👋 Saliendo del sistema... ¡Éxitos en la entrega del TP!")
+            print("\n👋 Saliendo del sistema!")
             break
         else:
             print("❌ Opción incorrecta.")
