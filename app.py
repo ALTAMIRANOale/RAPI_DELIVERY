@@ -669,7 +669,7 @@ def menu():
                 pausa()
                 continue
 
-            print(f"\n{NEGRITA}Editando Pedido #{id_p}{RESET}")
+            print(f"\n{NEGRITA}Editando Pedido #{pedido.id_pedido}{RESET}")
             print(f"{CIAN}Deje en blanco para mantener el valor actual.{RESET}")
             print(f"Cliente actual: {pedido.cliente}")
             nuevo_cliente = input("Nuevo cliente: ").strip() or None
@@ -698,9 +698,9 @@ def menu():
             if nuevo_monto is not None: kwargs["total_productos"] = nuevo_monto
 
             if kwargs:
-                cambios, msg = sistema.editar_pedido(id_p, **kwargs)
+                cambios, msg = sistema.editar_pedido(pedido.id_pedido, **kwargs)
                 if cambios:
-                    print(f"{VERDE}[OK] Pedido #{id_p} actualizado: {', '.join(cambios)}{RESET}")
+                    print(f"{VERDE}[OK] Pedido #{pedido.id_pedido} actualizado: {', '.join(cambios)}{RESET}")
                 else:
                     print(f"{ROJO}{msg}{RESET}")
             else:
@@ -732,10 +732,10 @@ def menu():
                 if motivo == "Otro":
                     motivo = input("Especifique el motivo: ").strip()
 
-            ok, msg = sistema.actualizar_estado(id_p, nuevo_est, motivo)
+            ok, msg = sistema.actualizar_estado(pedido.id_pedido, nuevo_est, motivo)
             if ok:
                 color = COLORES_ESTADO.get(nuevo_est, "")
-                print(f"{VERDE}[OK] Estado del pedido #{id_p} actualizado a {color}[{nuevo_est}]{RESET}")
+                print(f"{VERDE}[OK] Estado del pedido #{pedido.id_pedido} actualizado a {color}[{nuevo_est}]{RESET}")
             else:
                 print(f"{ROJO}[X] {msg}{RESET}")
             pausa()
@@ -761,9 +761,9 @@ def menu():
             if motivo == "Otro":
                 motivo = input("Especifique el motivo: ").strip()
 
-            ok, msg = sistema.actualizar_estado(id_p, "Cancelado", motivo)
+            ok, msg = sistema.actualizar_estado(pedido.id_pedido, "Cancelado", motivo)
             if ok:
-                print(f"{ROJO}[X] Pedido #{id_p} cancelado. Motivo: {motivo}{RESET}")
+                print(f"{ROJO}[X] Pedido #{pedido.id_pedido} cancelado. Motivo: {motivo}{RESET}")
             else:
                 print(f"{ROJO}{msg}{RESET}")
             pausa()
@@ -817,8 +817,8 @@ def menu():
                 pausa()
                 continue
 
-            sistema.actualizar_estado(id_p, "En Camino", "Iniciando simulacion de recorrido")
-            sistema.simulacro_recorrido(id_p)
+            sistema.actualizar_estado(pedido.id_pedido, "En Camino", "Iniciando simulacion de recorrido")
+            sistema.simulacro_recorrido(pedido.id_pedido)
             pausa()
 
         elif opcion == "13":
