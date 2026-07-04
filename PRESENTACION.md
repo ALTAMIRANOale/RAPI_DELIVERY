@@ -2,7 +2,7 @@
 
 ## Resumen del Proyecto
 
-Sistema de gestión de delivery desarrollado en Python como trabajo práctico. Partiendo de un código base funcional, se realizaron **20 mejoras** que transforman la app en un sistema completo, moderno y robusto para la administración de pedidos a domicilio en la ciudad de Resistencia.
+Sistema de gestión de delivery desarrollado en Python como trabajo práctico. Partiendo de un código base funcional, se realizaron **21 mejoras** que transforman la app en un sistema completo, moderno y robusto para la administración de pedidos a domicilio en la ciudad de Resistencia.
 
 ---
 
@@ -105,6 +105,16 @@ Simulación visual con barra de progreso animada que muestra el recorrido del pe
 - Descripción de cada etapa
 - Tiempo real calculado según zona y prioridad
 
+### 1.21 Selección de Pedidos con Lista Compacta y Búsqueda por Nombre
+Antes de realizar cualquier operación que requiera un ID (editar, cancelar, cambiar estado, ver detalle, ticket, simulación, historial), el sistema muestra automáticamente una **lista compacta** de todos los pedidos con su ID, estado, cliente y total. Además, permite **buscar por nombre de cliente**:
+- Si ingresa un número, busca por ID exacto
+- Si ingresa texto, busca coincidencias parciales en el nombre del cliente
+- Si hay múltiples resultados, los lista y solicita el ID exacto
+- Si hay un solo resultado, lo selecciona automáticamente
+- Si presiona Enter vacío, cancela la operación
+
+Esto elimina la necesidad de memorizar IDs o cambiar de pantalla para consultar la lista.
+
 ---
 
 ## 2. Estructura del Código
@@ -149,7 +159,9 @@ app.py
 │   ├── pausa(), limpiar() - UI helpers
 │   ├── validar_entero(), validar_flotante() - Validación numérica
 │   ├── validar_telefono() - Validación de teléfono
-│   └── seleccionar_opcion() - Menú con opciones acotadas
+│   ├── seleccionar_opcion() - Menú con opciones acotadas
+│   ├── mostrar_lista_compacta() - Listado rápido de pedidos
+│   └── seleccionar_pedido() - Busca pedido por ID o nombre del cliente
 │
 └── menu() - Función principal con ciclo interactivo
 ```
@@ -220,9 +232,14 @@ El sistema calcula automáticamente descuentos: 5% para pedidos mayores
 a $5,000 y 10% para mayores a $10,000. Al finalizar, se genera un ticket 
 completo con el mensaje "¡Gracias por elegirnos!".
 
-Podemos buscar cualquier pedido, ver su información completa con colores 
-según el estado, editar sus datos, cambiar estados, o cancelarlo 
-exigiendo un motivo de una lista predefinida.
+Un detalle muy práctico: cada vez que necesitamos buscar, editar o 
+cancelar un pedido, el sistema muestra automáticamente una lista compacta 
+con todos los pedidos y sus IDs. Además, podemos buscar directamente 
+escribiendo el nombre del cliente - no hace falta memorizar IDs. 
+
+Podemos ver la información completa con colores según el estado, 
+editar cualquier campo, cambiar estados, o cancelar exigiendo 
+un motivo de una lista predefinida.
 ```
 
 ### Parte 3: Análisis y Datos (2:00 - 3:00) - "Tomando decisiones con datos"

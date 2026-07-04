@@ -105,6 +105,53 @@ def seleccionar_opcion(mensaje, opciones_validas):
         print(f"{ROJO}Opcion incorrecta.{RESET}")
 
 
+def mostrar_lista_compacta(pedidos):
+    if not pedidos:
+        print(f"\n{AMARILLO}[!] No hay pedidos registrados.{RESET}")
+        return False
+    print(f"\n{NEGRITA}--- LISTA DE PEDIDOS ---{RESET}")
+    print(f"{'=' * 58}")
+    for p in sorted(pedidos.values(), key=lambda x: x.id_pedido):
+        color = COLORES_ESTADO.get(p.estado, "")
+        print(f"  ID: {str(p.id_pedido).ljust(3)} | {color}[{p.estado}]{RESET} | "
+              f"{p.cliente.ljust(15)} | ${p.total_pagar:>7.2f}")
+    print(f"{'=' * 58}")
+    return True
+
+
+def seleccionar_pedido(sistema, accion=""):
+    if not mostrar_lista_compacta(sistema.pedidos):
+        return None
+
+    while True:
+        entrada = input(f"\nIngrese ID del pedido {accion}(o nombre del cliente para buscar): ").strip()
+        if not entrada:
+            return None
+
+        if entrada.isdigit():
+            id_p = int(entrada)
+            pedido = sistema.buscar_pedido(id_p)
+            if pedido:
+                return pedido
+            print(f"{ROJO}ID #{id_p} no encontrado.{RESET}")
+            continue
+
+        resultados = [p for p in sistema.pedidos.values()
+                      if entrada.lower() in p.cliente.lower()]
+        if not resultados:
+            print(f"{ROJO}No se encontraron pedidos con ese nombre.{RESET}")
+            continue
+
+        if len(resultados) == 1:
+            return resultados[0]
+
+        print(f"\n{NEGRITA}Se encontraron varios pedidos:{RESET}")
+        for p in resultados:
+            color = COLORES_ESTADO.get(p.estado, "")
+            print(f"  ID: {p.id_pedido} | {p.cliente} | {color}[{p.estado}]{RESET} | ${p.total_pagar:.2f}")
+        print(f"{CIAN}Ingrese el ID exacto del que desea seleccionar.{RESET}")
+
+
 class Pedido:
     def __init__(self, id_pedido, cliente, direccion, telefono, zona,
                  total_productos, metodo_pago="Efectivo", prioridad="Normal",
@@ -611,19 +658,14 @@ def menu():
             pausa()
 
         elif opcion == "2":
-            id_p = validar_entero("Ingrese el ID del pedido: ")
-            pedido = sistema.buscar_pedido(id_p)
+            pedido = seleccionar_pedido(sistema, "a buscar: ")
             if pedido:
                 print(pedido.mostrar_completo())
-            else:
-                print(f"\n{ROJO}Pedido #{id_p} no encontrado.{RESET}")
             pausa()
 
         elif opcion == "3":
-            id_p = validar_entero("Ingrese el ID del pedido a editar: ")
-            pedido = sistema.buscar_pedido(id_p)
+            pedido = seleccionar_pedido(sistema, "a editar: ")
             if not pedido:
-                print(f"\n{ROJO}Pedido no encontrado.{RESET}")
                 pausa()
                 continue
 
@@ -667,10 +709,8 @@ def menu():
 
         elif opcion == "4":
             print(f"\n{NEGRITA}--- CAMBIAR ESTADO ---{RESET}")
-            id_p = validar_entero("Ingrese el ID del pedido: ")
-            pedido = sistema.buscar_pedido(id_p)
+            pedido = seleccionar_pedido(sistema, "para cambiar estado: ")
             if not pedido:
-                print(f"{ROJO}Pedido no encontrado.{RESET}")
                 pausa()
                 continue
 
@@ -702,10 +742,8 @@ def menu():
 
         elif opcion == "5":
             print(f"\n{NEGRITA}--- CANCELAR PEDIDO ---{RESET}")
-            id_p = validar_entero("Ingrese el ID del pedido a cancelar: ")
-            pedido = sistema.buscar_pedido(id_p)
+            pedido = seleccionar_pedido(sistema, "a cancelar: ")
             if not pedido:
-                print(f"{ROJO}Pedido no encontrado.{RESET}")
                 pausa()
                 continue
 
@@ -735,21 +773,15 @@ def menu():
             pausa()
 
         elif opcion == "7":
-            id_p = validar_entero("Ingrese el ID del pedido: ")
-            pedido = sistema.buscar_pedido(id_p)
+            pedido = seleccionar_pedido(sistema, "a mostrar: ")
             if pedido:
                 print(pedido.mostrar_completo())
-            else:
-                print(f"{ROJO}Pedido no encontrado.{RESET}")
             pausa()
 
         elif opcion == "8":
-            id_p = validar_entero("Ingrese el ID del pedido: ")
-            pedido = sistema.buscar_pedido(id_p)
+            pedido = seleccionar_pedido(sistema, "para ticket: ")
             if pedido:
                 print(pedido.ticket())
-            else:
-                print(f"{ROJO}Pedido no encontrado.{RESET}")
             pausa()
 
         elif opcion == "9":
@@ -772,10 +804,8 @@ def menu():
             pausa()
 
         elif opcion == "12":
-            id_p = validar_entero("Ingrese el ID del pedido para simular: ")
-            pedido = sistema.buscar_pedido(id_p)
+            pedido = seleccionar_pedido(sistema, "para simular: ")
             if not pedido:
-                print(f"{ROJO}Pedido no encontrado.{RESET}")
                 pausa()
                 continue
             if pedido.estado == "Cancelado":
@@ -792,8 +822,9 @@ def menu():
             pausa()
 
         elif opcion == "13":
-            id_p = validar_entero("Ingrese el ID del pedido: ")
-            sistema.historial_cambios(id_p)
+            pedido = seleccionar_pedido(sistema, "para historial: ")
+            if pedido:
+                sistema.historial_cambios(pedido.id_pedido)
             pausa()
 
         elif opcion == "14":
