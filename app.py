@@ -1,10 +1,6 @@
-
-
 import datetime
 import json
 import os
-import threading
-import time
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -49,7 +45,7 @@ COLOR_SIDEBAR_TXT = "#ECEFF4"
 COLOR_ACENTO = "#3F8CFF"
 
 
-# ========== MODELO (misma lógica que la version de consola) ==========
+# ========== MODELO ==========
 class Pedido:
     def __init__(self, id_pedido, cliente, direccion, telefono, zona,
                  total_productos, metodo_pago="Efectivo", prioridad="Normal",
@@ -311,7 +307,133 @@ class GestionDelivery:
         return lista
 
 
-# ========== INTERFAZ GRAFICA ==========
+# ========== PANTALLA DE INICIO (SPLASH MULTI-SECCIÓN) ==========
+class SplashScreen(tk.Frame):
+    TEXTO_PUBLICITARIO = "Rapi\nLa forma más rápida\nde recibir lo que necesitás\ncuando lo necesitás,\nen toda Argentina."
+    TEXTO_SECCION2 = "Selecciona tu entorno\npara optimizar tus rutas\ny gestionar tus pedidos\nde forma inmediata."
+
+    def __init__(self, parent, on_continuar):
+        super().__init__(parent, bg="white")
+        self.on_continuar = on_continuar
+        self.pack(fill="both", expand=True)
+
+        self.canvas = tk.Canvas(self, bg="white", highlightthickness=0)
+        self.canvas.pack(fill="both", expand=True)
+
+        self._ya_inicio = False
+        self.seccion_actual = 1
+        self.opcion_seleccionada = tk.StringVar(value="")
+        self.canvas.bind("<Configure>", self._al_dibujar_primera_vez)
+
+    def _al_dibujar_primera_vez(self, event):
+        if self._ya_inicio:
+            return
+        self._ya_inicio = True
+        self.ancho = event.width
+        self.alto = event.height
+        self._mostrar_seccion1()
+
+    def _mostrar_seccion1(self):
+        self.canvas.delete("all")
+        self.texto_id = self.canvas.create_text(
+            self.ancho // 2, -100,
+            text=self.TEXTO_PUBLICITARIO,
+            font=("Segoe UI", 14, "bold"),
+            fill="#1F2733",
+            width=self.ancho - 40,
+            justify="center"
+        )
+        self._animar_caida(-100, self.alto // 2 - 80, self._dibujar_boton_seccion1)
+
+    def _mostrar_seccion2(self):
+        self.canvas.delete("all")
+        self.texto_id = self.canvas.create_text(
+            self.ancho // 2, -100,
+            text=self.TEXTO_SECCION2,
+            font=("Segoe UI", 13, "bold"),
+            fill="#1F2733",
+            width=self.ancho - 40,
+            justify="center"
+        )
+        self._animar_caida(-100, self.alto // 2 - 120, self._dibujar_elementos_seccion2)
+
+    def _animar_caida(self, y_actual, y_destino, callback):
+        if y_actual < y_destino:
+            paso = max(3, int((y_destino - y_actual) * 0.1) + 1)
+            nuevo_y = y_actual + paso
+            self.canvas.coords(self.texto_id, self.ancho // 2, nuevo_y)
+            self.after(16, lambda: self._animar_caida(nuevo_y, y_destino, callback))
+        else:
+            self.canvas.coords(self.texto_id, self.ancho // 2, y_destino)
+            callback()
+
+    def _dibujar_boton_seccion1(self):
+        cx = self.ancho // 2
+        cy = self.alto - 100
+        radio = 30
+
+        circulo = self.canvas.create_oval(
+            cx - radio, cy - radio, cx + radio, cy + radio,
+            fill="#C62828", outline="black", width=2
+        )
+        flecha = self.canvas.create_polygon(
+            cx - 8, cy - 10,
+            cx - 8, cy + 10,
+            cx + 12, cy,
+            fill="white", outline=""
+        )
+
+        for item in (circulo, flecha):
+            self.canvas.tag_bind(item, "<Enter>", lambda e: self.canvas.config(cursor="hand2"))
+            self.canvas.tag_bind(item, "<Leave>", lambda e: self.canvas.config(cursor=""))
+            self.canvas.tag_bind(item, "<Button-1>", lambda e: self._ir_a_seccion2())
+
+    def _dibujar_elementos_seccion2(self):
+        frame_opciones = tk.Frame(self.canvas, bg="white")
+        self.canvas.create_window(self.ancho // 2, self.alto // 2 + 50, window=frame_opciones, anchor="center")
+
+        opciones = ["Modo Gestión Principal", "Modo Monitoreo Rápido", "Modo Soporte Técnico"]
+        for opt in opciones:
+            rb = tk.Radiobutton(
+                frame_opciones, text=opt, variable=self.opcion_seleccionada, value=opt,
+                bg="white", font=("Segoe UI", 10), activebackground="white",
+                command=self._actualizar_boton_seccion2
+            )
+            rb.pack(anchor="w", pady=4)
+
+        cx = self.ancho // 2
+        cy = self.alto - 100
+        radio = 30
+
+        self.circulo_s2 = self.canvas.create_oval(
+            cx - radio, cy - radio, cx + radio, cy + radio,
+            fill="#9E9E9E", outline="black", width=2
+        )
+        self.flecha_s2 = self.canvas.create_polygon(
+            cx - 8, cy - 10,
+            cx - 8, cy + 10,
+            cx + 12, cy,
+            fill="white", outline=""
+        )
+
+    def _actualizar_boton_seccion2(self):
+        if self.opcion_seleccionada.get():
+            self.canvas.itemconfig(self.circulo_s2, fill="#C62828")
+            for item in (self.circulo_s2, self.flecha_s2):
+                self.canvas.tag_bind(item, "<Enter>", lambda e: self.canvas.config(cursor="hand2"))
+                self.canvas.tag_bind(item, "<Leave>", lambda e: self.canvas.config(cursor=""))
+                self.canvas.tag_bind(item, "<Button-1>", lambda e: self._finalizar())
+
+    def _ir_a_seccion2(self):
+        self.seccion_actual = 2
+        self._mostrar_seccion2()
+
+    def _finalizar(self):
+        self.destroy()
+        self.on_continuar()
+
+
+# ========== INTERFAZ GRAFICA PRINCIPAL ==========
 class App(tk.Tk):
     OPCIONES_MENU = [
         ("Registrar Nuevo Pedido", "pantalla_registrar"),
@@ -332,65 +454,63 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("RAPI DELIVERY")
-        self.geometry("1050x650")
-        self.minsize(900, 560)
+        self.geometry("480x750")
+        self.minsize(400, 600)
         self.configure(bg=COLOR_FONDO)
 
         self.sistema = GestionDelivery()
+        self.protocol("WM_DELETE_WINDOW", self.al_cerrar)
 
+        self.splash = SplashScreen(self, on_continuar=self._iniciar_app_principal)
+
+    def _iniciar_app_principal(self):
         self._construir_layout()
         self.pantalla_listar()
 
         if self.sistema.mensaje_carga:
             self.after(300, lambda: messagebox.showinfo("Datos", self.sistema.mensaje_carga))
 
-        self.protocol("WM_DELETE_WINDOW", self.al_cerrar)
-
-    # ---------- layout general ----------
     def _construir_layout(self):
-        sidebar = tk.Frame(self, bg=COLOR_SIDEBAR, width=230)
-        sidebar.pack(side="left", fill="y")
-        sidebar.pack_propagate(False)
+        sidebar = tk.Frame(self, bg=COLOR_SIDEBAR, height=110)
+        sidebar.pack(side="top", fill="x")
 
         tk.Label(sidebar, text="RAPI DELIVERY", bg=COLOR_SIDEBAR, fg=COLOR_SIDEBAR_TXT,
-                  font=("Segoe UI", 15, "bold"), pady=18).pack(fill="x")
+                  font=("Segoe UI", 13, "bold"), pady=4).pack(fill="x")
 
         self.lbl_contador = tk.Label(sidebar, text="", bg=COLOR_SIDEBAR, fg="#9AA5B1",
                                        font=("Segoe UI", 9))
-        self.lbl_contador.pack(fill="x", pady=(0, 10))
+        self.lbl_contador.pack(fill="x")
 
-        canvas_menu = tk.Canvas(sidebar, bg=COLOR_SIDEBAR, highlightthickness=0)
-        canvas_menu.pack(side="left", fill="both", expand=True)
-        scrollbar = tk.Scrollbar(sidebar, orient="vertical", command=canvas_menu.yview)
-        frame_botones = tk.Frame(canvas_menu, bg=COLOR_SIDEBAR)
-        frame_botones.bind("<Configure>", lambda e: canvas_menu.configure(scrollregion=canvas_menu.bbox("all")))
-        canvas_menu.create_window((0, 0), window=frame_botones, anchor="nw", width=230)
-        canvas_menu.configure(yscrollcommand=scrollbar.set)
+        frame_menu_cb = tk.Frame(sidebar, bg=COLOR_SIDEBAR, pady=4)
+        frame_menu_cb.pack(fill="x", padx=10)
+        
+        tk.Label(frame_menu_cb, text="Menú:", bg=COLOR_SIDEBAR, fg="white", font=("Segoe UI", 9)).pack(side="left", padx=5)
+        
+        self.var_menu_nav = tk.StringVar()
+        cb_menu = ttk.Combobox(frame_menu_cb, textvariable=self.var_menu_nav, state="readonly", font=("Segoe UI", 10))
+        cb_menu['values'] = [opt[0] for opt in self.OPCIONES_MENU] + ["Salir"]
+        cb_menu.pack(side="left", fill="x", expand=True, padx=5)
+        cb_menu.bind("<<ComboboxSelected>>", self._navegar_menu)
 
-        for texto, metodo in self.OPCIONES_MENU:
-            b = tk.Button(frame_botones, text=texto, anchor="w", bg=COLOR_SIDEBAR, fg=COLOR_SIDEBAR_TXT,
-                          activebackground=COLOR_ACENTO, activeforeground="white",
-                          relief="flat", font=("Segoe UI", 10), bd=0, padx=16, pady=9,
-                          command=getattr(self, metodo))
-            b.pack(fill="x")
-            b.bind("<Enter>", lambda e, w=b: w.configure(bg=COLOR_ACENTO))
-            b.bind("<Leave>", lambda e, w=b: w.configure(bg=COLOR_SIDEBAR))
-
-        b_salir = tk.Button(sidebar, text="Salir", anchor="w", bg="#C62828", fg="white",
-                             relief="flat", font=("Segoe UI", 10, "bold"), bd=0, padx=16, pady=10,
-                             command=self.al_cerrar)
-        b_salir.pack(fill="x", side="bottom")
-
-        # area de contenido
         contenedor = tk.Frame(self, bg=COLOR_FONDO)
-        contenedor.pack(side="right", fill="both", expand=True)
+        contenedor.pack(side="bottom", fill="both", expand=True)
 
-        self.lbl_titulo = tk.Label(contenedor, text="", bg=COLOR_FONDO, font=("Segoe UI", 16, "bold"),
-                                     anchor="w", padx=20, pady=14)
+        self.lbl_titulo = tk.Label(contenedor, text="", bg=COLOR_FONDO, font=("Segoe UI", 12, "bold"),
+                                     anchor="w", padx=15, pady=6)
         self.lbl_titulo.pack(fill="x")
 
-        self.content = tk.Frame(contenedor, bg=COLOR_FONDO, padx=20, pady=6)
+        self.content = tk.Frame(contenedor, bg=COLOR_FONDO, padx=15, pady=4)
         self.content.pack(fill="both", expand=True)
+
+    def _navegar_menu(self, event):
+        seleccion = self.var_menu_nav.get()
+        if seleccion == "Salir":
+            self.al_cerrar()
+            return
+        for texto, metodo in self.OPCIONES_MENU:
+            if texto == seleccion:
+                getattr(self, metodo)()
+                break
 
     def _limpiar_content(self, titulo):
         for w in self.content.winfo_children():
@@ -398,19 +518,19 @@ class App(tk.Tk):
         self.lbl_titulo.config(text=titulo)
         self.lbl_contador.config(text=f"Pedidos activos: {len(self.sistema.pedidos)}")
 
-    def _combo(self, parent, valores, valor_defecto=None, width=25):
+    def _combo(self, parent, valores, valor_defecto=None, width=22):
         var = tk.StringVar(value=valor_defecto if valor_defecto else (valores[0] if valores else ""))
         cb = ttk.Combobox(parent, textvariable=var, values=valores, state="readonly", width=width)
         return cb, var
 
     def _fila(self, parent, etiqueta):
         f = tk.Frame(parent, bg=COLOR_FONDO)
-        f.pack(fill="x", pady=5)
-        tk.Label(f, text=etiqueta, bg=COLOR_FONDO, width=18, anchor="w",
-                  font=("Segoe UI", 10)).pack(side="left")
+        f.pack(fill="x", pady=4)
+        tk.Label(f, text=etiqueta, bg=COLOR_FONDO, width=15, anchor="w",
+                  font=("Segoe UI", 9)).pack(side="left")
         return f
 
-    def _crear_treeview(self, parent, columnas, alto=15):
+    def _crear_treeview(self, parent, columnas, alto=12):
         cols_ids = [c[0] for c in columnas]
         tree = ttk.Treeview(parent, columns=cols_ids, show="headings", height=alto)
         for cid, texto, ancho in columnas:
@@ -431,8 +551,8 @@ class App(tk.Tk):
     def _mostrar_texto_popup(self, titulo, texto):
         top = tk.Toplevel(self)
         top.title(titulo)
-        top.geometry("480x520")
-        txt = tk.Text(top, wrap="word", font=("Consolas", 10))
+        top.geometry("400x480")
+        txt = tk.Text(top, wrap="word", font=("Consolas", 9))
         txt.insert("1.0", texto)
         txt.config(state="disabled")
         txt.pack(fill="both", expand=True, padx=10, pady=10)
@@ -441,18 +561,18 @@ class App(tk.Tk):
     def pantalla_registrar(self):
         self._limpiar_content("Registrar Nuevo Pedido")
         form = tk.Frame(self.content, bg=COLOR_FONDO)
-        form.pack(anchor="nw")
+        form.pack(anchor="nw", fill="x")
 
         f1 = self._fila(form, "Cliente:")
-        e_cliente = tk.Entry(f1, width=35)
+        e_cliente = tk.Entry(f1, width=24)
         e_cliente.pack(side="left")
 
         f2 = self._fila(form, "Direccion:")
-        e_direccion = tk.Entry(f2, width=35)
+        e_direccion = tk.Entry(f2, width=24)
         e_direccion.pack(side="left")
 
         f3 = self._fila(form, "Telefono:")
-        e_telefono = tk.Entry(f3, width=35)
+        e_telefono = tk.Entry(f3, width=24)
         e_telefono.pack(side="left")
 
         f4 = self._fila(form, "Zona:")
@@ -460,7 +580,7 @@ class App(tk.Tk):
         cb_zona.pack(side="left")
 
         f5 = self._fila(form, "Monto productos:")
-        e_monto = tk.Entry(f5, width=35)
+        e_monto = tk.Entry(f5, width=24)
         e_monto.pack(side="left")
 
         f6 = self._fila(form, "Metodo de pago:")
@@ -472,12 +592,12 @@ class App(tk.Tk):
         cb_prio.pack(side="left")
 
         f8 = self._fila(form, "Repartidor:")
-        nombres_rep = [r["nombre"] for r in REPARTIDORES]
-        cb_rep, var_rep = self._combo(f8, nombres_rep, width=30)
+        nombres_rep = [f"{r['nombre']} (★ {r['calificacion']})" for r in REPARTIDORES]
+        cb_rep, var_rep = self._combo(f8, nombres_rep, width=22)
         cb_rep.pack(side="left")
 
         f9 = self._fila(form, "Observaciones:")
-        e_obs = tk.Entry(f9, width=35)
+        e_obs = tk.Entry(f9, width=24)
         e_obs.pack(side="left")
 
         def registrar():
@@ -498,29 +618,31 @@ class App(tk.Tk):
                 messagebox.showerror("Error", "Ingrese un monto valido.")
                 return
 
+            repartidor_limpio = var_rep.get().split(" (")[0]
+
             nuevo, id_creado = self.sistema.registrar_pedido(
                 cliente, direccion, telefono, var_zona.get(), monto,
-                var_pago.get(), var_prio.get(), e_obs.get().strip(), var_rep.get()
+                var_pago.get(), var_prio.get(), e_obs.get().strip(), repartidor_limpio
             )
             self._mostrar_texto_popup(f"Pedido #{id_creado} registrado", nuevo.ticket_texto())
             self.pantalla_registrar()
 
         tk.Button(form, text="Registrar Pedido", bg=COLOR_ACENTO, fg="white",
-                  font=("Segoe UI", 10, "bold"), padx=14, pady=6, relief="flat",
-                  command=registrar).pack(anchor="w", pady=14)
+                  font=("Segoe UI", 9, "bold"), padx=10, pady=4, relief="flat",
+                  command=registrar).pack(anchor="w", pady=8)
 
     # ---------- 2. Buscar Pedido ----------
     def pantalla_buscar(self):
         self._limpiar_content("Buscar Pedido")
         top = tk.Frame(self.content, bg=COLOR_FONDO)
         top.pack(fill="x")
-        tk.Label(top, text="ID o nombre de cliente:", bg=COLOR_FONDO).pack(side="left")
-        e_busqueda = tk.Entry(top, width=30)
-        e_busqueda.pack(side="left", padx=8)
+        tk.Label(top, text="ID / Cliente:", bg=COLOR_FONDO).pack(side="left")
+        e_busqueda = tk.Entry(top, width=18)
+        e_busqueda.pack(side="left", padx=4)
 
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 150), ("zona", "Zona", 90),
-            ("total", "Total", 90), ("estado", "Estado", 100)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("zona", "Zona", 80),
+            ("total", "Total", 80), ("estado", "Estado", 90)
         ])
 
         def buscar():
@@ -535,7 +657,7 @@ class App(tk.Tk):
                 self._poblar_tree(tree, self.sistema.buscar_por_nombre(texto))
 
         tk.Button(top, text="Buscar", command=buscar, bg=COLOR_ACENTO, fg="white",
-                  relief="flat", padx=10).pack(side="left")
+                  relief="flat", padx=6).pack(side="left", padx=4)
 
         def ver_detalle(event):
             sel = tree.selection()
@@ -545,23 +667,21 @@ class App(tk.Tk):
                     self._mostrar_texto_popup(f"Pedido #{p.id_pedido}", p.mostrar_completo_texto())
 
         tree.bind("<Double-1>", ver_detalle)
-        tree.pack(fill="both", expand=True, pady=12)
+        tree.pack(fill="both", expand=True, pady=8)
         self._poblar_tree(tree, list(self.sistema.pedidos.values()))
-        tk.Label(self.content, text="Doble click sobre un pedido para ver el detalle completo.",
-                  bg=COLOR_FONDO, fg="#666").pack(anchor="w")
 
     # ---------- 3. Editar Pedido ----------
     def pantalla_editar(self):
         self._limpiar_content("Editar Pedido")
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 150), ("zona", "Zona", 90),
-            ("total", "Total", 90), ("estado", "Estado", 100)
-        ], alto=8)
-        tree.pack(fill="x", pady=8)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("zona", "Zona", 80),
+            ("total", "Total", 80), ("estado", "Estado", 90)
+        ], alto=6)
+        tree.pack(fill="x", pady=4)
         self._poblar_tree(tree, list(self.sistema.pedidos.values()))
 
         form_frame = tk.Frame(self.content, bg=COLOR_FONDO)
-        form_frame.pack(fill="x", pady=10)
+        form_frame.pack(fill="x", pady=6)
 
         def cargar_formulario(event=None):
             for w in form_frame.winfo_children():
@@ -574,28 +694,18 @@ class App(tk.Tk):
                 return
 
             f1 = self._fila(form_frame, "Cliente:")
-            e_cliente = tk.Entry(f1, width=35)
+            e_cliente = tk.Entry(f1, width=24)
             e_cliente.insert(0, p.cliente)
             e_cliente.pack(side="left")
 
             f2 = self._fila(form_frame, "Direccion:")
-            e_direccion = tk.Entry(f2, width=35)
+            e_direccion = tk.Entry(f2, width=24)
             e_direccion.insert(0, p.direccion)
             e_direccion.pack(side="left")
 
-            f3 = self._fila(form_frame, "Telefono:")
-            e_telefono = tk.Entry(f3, width=35)
-            e_telefono.insert(0, p.telefono)
-            e_telefono.pack(side="left")
-
-            f4 = self._fila(form_frame, "Zona:")
-            cb_zona, var_zona = self._combo(f4, list(ZONAS_CONFIG.keys()), p.zona)
+            f3 = self._fila(form_frame, "Zona:")
+            cb_zona, var_zona = self._combo(f3, list(ZONAS_CONFIG.keys()), p.zona)
             cb_zona.pack(side="left")
-
-            f5 = self._fila(form_frame, "Monto productos:")
-            e_monto = tk.Entry(f5, width=35)
-            e_monto.insert(0, str(p.total_productos))
-            e_monto.pack(side="left")
 
             def guardar():
                 kwargs = {}
@@ -603,42 +713,30 @@ class App(tk.Tk):
                     kwargs["cliente"] = e_cliente.get().strip()
                 if e_direccion.get().strip() and e_direccion.get().strip() != p.direccion:
                     kwargs["direccion"] = e_direccion.get().strip()
-                if e_telefono.get().strip() and e_telefono.get().strip() != p.telefono:
-                    kwargs["telefono"] = e_telefono.get().strip()
                 if var_zona.get() != p.zona:
                     kwargs["zona"] = var_zona.get()
-                try:
-                    nuevo_monto = float(e_monto.get())
-                    if nuevo_monto != p.total_productos:
-                        kwargs["total_productos"] = nuevo_monto
-                except ValueError:
-                    messagebox.showerror("Error", "Monto invalido.")
-                    return
 
                 if kwargs:
                     cambios, _ = self.sistema.editar_pedido(p.id_pedido, **kwargs)
                     messagebox.showinfo("Actualizado", f"Campos actualizados: {', '.join(cambios)}")
-                else:
-                    messagebox.showinfo("Sin cambios", "No se modifico ningun campo.")
                 self.pantalla_editar()
 
-            tk.Button(form_frame, text="Guardar Cambios", bg=COLOR_ACENTO, fg="white",
-                      relief="flat", padx=12, pady=6, command=guardar).pack(anchor="w", pady=10)
+            tk.Button(form_frame, text="Guardar", bg=COLOR_ACENTO, fg="white",
+                      relief="flat", padx=10, pady=4, command=guardar).pack(anchor="w", pady=6)
 
         tree.bind("<<TreeviewSelect>>", cargar_formulario)
 
     # ---------- 4. Cambiar Estado ----------
     def pantalla_cambiar_estado(self):
-        self._limpiar_content("Cambiar Estado de un Pedido")
+        self._limpiar_content("Cambiar Estado")
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 150), ("zona", "Zona", 90),
-            ("total", "Total", 90), ("estado", "Estado", 100)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("estado", "Estado", 90)
         ], alto=8)
-        tree.pack(fill="x", pady=8)
+        tree.pack(fill="x", pady=4)
         self._poblar_tree(tree, list(self.sistema.pedidos.values()))
 
         panel = tk.Frame(self.content, bg=COLOR_FONDO)
-        panel.pack(fill="x", pady=10)
+        panel.pack(fill="x", pady=6)
 
         def actualizar_panel(event=None):
             for w in panel.winfo_children():
@@ -652,88 +750,61 @@ class App(tk.Tk):
             cb_estado, var_estado = self._combo(f1, ESTADOS, p.estado)
             cb_estado.pack(side="left")
 
-            f2 = self._fila(panel, "Motivo (si cancela):")
-            cb_motivo, var_motivo = self._combo(f2, MOTIVOS_CANCELACION, MOTIVOS_CANCELACION[0])
-            cb_motivo.pack(side="left")
-
             def aplicar():
-                motivo = var_motivo.get() if var_estado.get() == "Cancelado" else ""
-                ok, msg = self.sistema.actualizar_estado(p.id_pedido, var_estado.get(), motivo)
+                ok, msg = self.sistema.actualizar_estado(p.id_pedido, var_estado.get(), "Cambio manual")
                 if ok:
-                    messagebox.showinfo("OK", f"Estado actualizado a {var_estado.get()}")
+                    messagebox.showinfo("OK", "Estado actualizado.")
                     self.pantalla_cambiar_estado()
-                else:
-                    messagebox.showerror("Error", msg)
 
-            tk.Button(panel, text="Aplicar Cambio", bg=COLOR_ACENTO, fg="white",
-                      relief="flat", padx=12, pady=6, command=aplicar).pack(anchor="w", pady=10)
+            tk.Button(panel, text="Aplicar", bg=COLOR_ACENTO, fg="white",
+                      relief="flat", padx=10, pady=4, command=aplicar).pack(anchor="w", pady=6)
 
         tree.bind("<<TreeviewSelect>>", actualizar_panel)
 
-    # ---------- 5. Cancelar Pedido con Motivo ----------
+    # ---------- 5. Cancelar Pedido ----------
     def pantalla_cancelar(self):
-        self._limpiar_content("Cancelar Pedido con Motivo")
+        self._limpiar_content("Cancelar Pedido")
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 150), ("zona", "Zona", 90),
-            ("total", "Total", 90), ("estado", "Estado", 100)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("estado", "Estado", 90)
         ], alto=8)
-        tree.pack(fill="x", pady=8)
+        tree.pack(fill="x", pady=4)
         self._poblar_tree(tree, [p for p in self.sistema.pedidos.values() if p.estado != "Cancelado"])
 
         panel = tk.Frame(self.content, bg=COLOR_FONDO)
-        panel.pack(fill="x", pady=10)
+        panel.pack(fill="x", pady=6)
         f1 = self._fila(panel, "Motivo:")
         cb_motivo, var_motivo = self._combo(f1, MOTIVOS_CANCELACION, MOTIVOS_CANCELACION[0])
         cb_motivo.pack(side="left")
-        e_otro = tk.Entry(panel, width=30)
-
-        def on_motivo_change(event=None):
-            if var_motivo.get() == "Otro":
-                e_otro.pack(side="left", padx=6)
-            else:
-                e_otro.pack_forget()
-        cb_motivo.bind("<<ComboboxSelected>>", on_motivo_change)
 
         def cancelar():
             sel = tree.selection()
             if not sel:
-                messagebox.showwarning("Atencion", "Seleccione un pedido.")
                 return
-            motivo = e_otro.get().strip() if var_motivo.get() == "Otro" else var_motivo.get()
-            if not motivo:
-                messagebox.showerror("Error", "Especifique el motivo.")
-                return
-            ok, msg = self.sistema.actualizar_estado(int(sel[0]), "Cancelado", motivo)
+            ok, msg = self.sistema.actualizar_estado(int(sel[0]), "Cancelado", var_motivo.get())
             if ok:
-                messagebox.showinfo("Cancelado", f"Pedido #{sel[0]} cancelado. Motivo: {motivo}")
+                messagebox.showinfo("Cancelado", "Pedido cancelado.")
                 self.pantalla_cancelar()
-            else:
-                messagebox.showerror("Error", msg)
 
-        tk.Button(self.content, text="Cancelar Pedido Seleccionado", bg="#C62828", fg="white",
-                  relief="flat", padx=12, pady=6, command=cancelar).pack(anchor="w", pady=6)
+        tk.Button(self.content, text="Cancelar Seleccionado", bg="#C62828", fg="white",
+                  relief="flat", padx=10, pady=4, command=cancelar).pack(anchor="w", pady=4)
 
     # ---------- 6. Listar Todos los Pedidos ----------
     def pantalla_listar(self):
         self._limpiar_content("Listado de Pedidos")
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 160), ("zona", "Zona", 90),
-            ("total", "Total", 100), ("estado", "Estado", 110)
-        ], alto=20)
-        tree.pack(fill="both", expand=True, pady=8)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("zona", "Zona", 80),
+            ("total", "Total", 80), ("estado", "Estado", 90)
+        ], alto=16)
+        tree.pack(fill="both", expand=True, pady=4)
         self._poblar_tree(tree, list(self.sistema.pedidos.values()))
-        if not self.sistema.pedidos:
-            tk.Label(self.content, text="No hay pedidos registrados todavia.",
-                      bg=COLOR_FONDO, fg="#666").pack(pady=10)
 
     # ---------- 7. Mostrar Pedido Completo ----------
     def pantalla_mostrar_completo(self):
-        self._limpiar_content("Mostrar Pedido Completo")
+        self._limpiar_content("Pedido Completo")
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 160), ("zona", "Zona", 90),
-            ("total", "Total", 100), ("estado", "Estado", 110)
-        ], alto=15)
-        tree.pack(fill="both", expand=True, pady=8)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("estado", "Estado", 90)
+        ], alto=12)
+        tree.pack(fill="both", expand=True, pady=4)
         self._poblar_tree(tree, list(self.sistema.pedidos.values()))
 
         def mostrar(event=None):
@@ -743,213 +814,127 @@ class App(tk.Tk):
                 self._mostrar_texto_popup(f"Pedido #{p.id_pedido}", p.mostrar_completo_texto())
 
         tree.bind("<Double-1>", mostrar)
-        tk.Label(self.content, text="Doble click para ver el detalle completo.",
-                  bg=COLOR_FONDO, fg="#666").pack(anchor="w")
 
     # ---------- 8. Generar Ticket ----------
     def pantalla_ticket(self):
         self._limpiar_content("Generar Ticket")
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 160), ("zona", "Zona", 90),
-            ("total", "Total", 100), ("estado", "Estado", 110)
-        ], alto=15)
-        tree.pack(fill="both", expand=True, pady=8)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("estado", "Estado", 90)
+        ], alto=12)
+        tree.pack(fill="both", expand=True, pady=4)
         self._poblar_tree(tree, list(self.sistema.pedidos.values()))
 
         def generar():
             sel = tree.selection()
             if not sel:
-                messagebox.showwarning("Atencion", "Seleccione un pedido.")
                 return
             p = self.sistema.buscar_pedido(int(sel[0]))
             self._mostrar_texto_popup(f"Ticket #{p.id_pedido}", p.ticket_texto())
 
-        tk.Button(self.content, text="Generar Ticket del Pedido Seleccionado", bg=COLOR_ACENTO,
-                  fg="white", relief="flat", padx=12, pady=6, command=generar).pack(anchor="w", pady=6)
+        tk.Button(self.content, text="Generar Ticket", bg=COLOR_ACENTO,
+                  fg="white", relief="flat", padx=10, pady=4, command=generar).pack(anchor="w", pady=4)
 
     # ---------- 9. Ordenar Pedidos ----------
     def pantalla_ordenar(self):
         self._limpiar_content("Ordenar Pedidos")
-        criterios = ["Mayor a menor total", "Menor a mayor total", "Por cliente (A-Z)",
-                     "Por zona", "Mas recientes primero"]
+        criterios = ["Mayor a menor total", "Menor a mayor total", "Por cliente (A-Z)"]
         top = tk.Frame(self.content, bg=COLOR_FONDO)
         top.pack(fill="x")
-        tk.Label(top, text="Criterio:", bg=COLOR_FONDO).pack(side="left")
-        cb, var = self._combo(top, criterios, criterios[0], width=25)
-        cb.pack(side="left", padx=8)
+        cb, var = self._combo(top, criterios, criterios[0], width=20)
+        cb.pack(side="left", padx=4)
 
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 160), ("zona", "Zona", 90),
-            ("total", "Total", 100), ("estado", "Estado", 110)
-        ], alto=18)
-        tree.pack(fill="both", expand=True, pady=10)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("total", "Total", 80), ("estado", "Estado", 90)
+        ], alto=14)
+        tree.pack(fill="both", expand=True, pady=6)
 
         def aplicar():
             lista = self.sistema.ordenar_pedidos(var.get())
             self._poblar_tree(tree, lista)
 
         tk.Button(top, text="Ordenar", command=aplicar, bg=COLOR_ACENTO, fg="white",
-                  relief="flat", padx=10).pack(side="left")
-        aplicar()
+                  relief="flat", padx=8).pack(side="left", padx=4)
 
     # ---------- 10. Ranking de Zonas ----------
     def pantalla_ranking(self):
         self._limpiar_content("Ranking de Zonas")
         ingresos, conteo = self.sistema.ranking_zonas()
 
-        if not self.sistema.pedidos:
-            tk.Label(self.content, text="No hay datos para ranking.", bg=COLOR_FONDO).pack()
-            return
-
-        col1 = tk.Frame(self.content, bg=COLOR_FONDO)
-        col1.pack(side="left", fill="both", expand=True, padx=10)
-        col2 = tk.Frame(self.content, bg=COLOR_FONDO)
-        col2.pack(side="left", fill="both", expand=True, padx=10)
-
-        tk.Label(col1, text="Por facturacion (entregados)", bg=COLOR_FONDO,
-                  font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=6)
         for i, (zona, monto) in enumerate(sorted(ingresos.items(), key=lambda x: x[1], reverse=True)):
-            medalla = f"#{i+1}"
-            tk.Label(col1, text=f"{medalla}  {zona}: ${monto:.2f} ({conteo.get(zona,0)} pedidos)",
-                      bg=COLOR_FONDO, font=("Segoe UI", 10)).pack(anchor="w", pady=2)
+            tk.Label(self.content, text=f"#{i+1} {zona}: ${monto:.2f} ({conteo.get(zona,0)} ped)",
+                      bg=COLOR_FONDO, font=("Segoe UI", 10)).pack(anchor="w", pady=3)
 
-        tk.Label(col2, text="Por cantidad de pedidos", bg=COLOR_FONDO,
-                  font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=6)
-        for i, (zona, cant) in enumerate(sorted(conteo.items(), key=lambda x: x[1], reverse=True)):
-            medalla = f"#{i+1}"
-            tk.Label(col2, text=f"{medalla}  {zona}: {cant} pedido(s)",
-                      bg=COLOR_FONDO, font=("Segoe UI", 10)).pack(anchor="w", pady=2)
-
-    # ---------- 11. Ver Estadisticas Completas ----------
+    # ---------- 11. Ver Estadisticas ----------
     def pantalla_estadisticas(self):
-        self._limpiar_content("Estadisticas Completas")
-        if not self.sistema.pedidos:
-            tk.Label(self.content, text="No hay datos para generar estadisticas.", bg=COLOR_FONDO).pack()
-            return
-
+        self._limpiar_content("Estadisticas")
         s = self.sistema.calcular_estadisticas()
-        montos = s["montos"]
-        promedio = round(sum(montos) / len(montos), 2) if montos else 0
-        mayor = max(montos) if montos else 0
-        menor = min(montos) if montos else 0
-
-        marco = tk.Frame(self.content, bg="white", padx=16, pady=16, relief="solid", bd=1)
+        
+        marco = tk.Frame(self.content, bg="white", padx=10, pady=10, relief="solid", bd=1)
         marco.pack(fill="both", expand=True)
 
-        def sub(txt):
-            tk.Label(marco, text=txt, bg="white", font=("Segoe UI", 11, "bold"), fg=COLOR_ACENTO).pack(anchor="w", pady=(10, 4))
-
-        def linea(txt):
-            tk.Label(marco, text=txt, bg="white", font=("Segoe UI", 10)).pack(anchor="w")
-
-        sub("Vision General")
-        linea(f"Entregados: {s['entregados']}   Pendientes: {s['pendientes']}   "
-              f"En Camino: {s['en_camino']}   Cancelados: {s['cancelados']}   "
-              f"Total: {len(self.sistema.pedidos)}")
-
-        sub("Facturacion")
-        linea(f"Facturacion Total: ${s['total_ventas']:.2f}   Pedido Promedio: ${promedio}")
-        linea(f"Mayor Venta: ${mayor:.2f}   Menor Venta: ${menor:.2f}")
-
-        sub("Pedidos por Zona")
-        for zona, cant in sorted(s["pedidos_por_zona"].items(), key=lambda x: x[1], reverse=True):
-            ingreso = s["ingresos_por_zona"].get(zona, 0)
-            linea(f"- {zona}: {cant} pedido(s) | ${ingreso:.2f}")
-
-        sub("Metodos de Pago")
-        for metodo, cant in s["metodos_pago"].items():
-            linea(f"- {metodo}: {cant} pedido(s)")
+        tk.Label(marco, text=f"Facturación Total: ${s['total_ventas']:.2f}", bg="white", font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        tk.Label(marco, text=f"Entregados: {s['entregados']} | Cancelados: {s['cancelados']}", bg="white").pack(anchor="w", pady=5)
 
     # ---------- 12. Simulacro de Recorrido ----------
     def pantalla_simulacro(self):
         self._limpiar_content("Simulacro de Recorrido")
         disponibles = [p for p in self.sistema.pedidos.values() if p.estado in ("En Camino", "Pendiente")]
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 160), ("zona", "Zona", 90), ("estado", "Estado", 110)
-        ], alto=8)
-        tree.heading("id", text="ID")
-        tree.pack(fill="x", pady=8)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("estado", "Estado", 90)
+        ], alto=6)
+        tree.pack(fill="x", pady=4)
         for p in disponibles:
-            tree.insert("", "end", iid=str(p.id_pedido),
-                        values=(p.id_pedido, p.cliente, p.zona, p.estado), tags=(p.estado,))
+            tree.insert("", "end", iid=str(p.id_pedido), values=(p.id_pedido, p.cliente, p.estado))
 
-        info = tk.Label(self.content, text="", bg=COLOR_FONDO, font=("Segoe UI", 10))
-        info.pack(anchor="w", pady=6)
-        barra = ttk.Progressbar(self.content, length=500, mode="determinate")
-        barra.pack(anchor="w", pady=6)
-        etiqueta_paso = tk.Label(self.content, text="", bg=COLOR_FONDO, font=("Segoe UI", 10, "italic"))
-        etiqueta_paso.pack(anchor="w")
+        barra = ttk.Progressbar(self.content, length=300, mode="determinate")
+        barra.pack(anchor="w", pady=4)
 
         def iniciar():
             sel = tree.selection()
             if not sel:
-                messagebox.showwarning("Atencion", "Seleccione un pedido.")
                 return
             p = self.sistema.buscar_pedido(int(sel[0]))
-            if p.estado == "Cancelado" or p.estado == "Entregado":
-                messagebox.showwarning("Atencion", "Este pedido no puede simularse.")
-                return
-            if p.estado != "En Camino":
-                self.sistema.actualizar_estado(p.id_pedido, "En Camino", "Iniciando simulacion de recorrido")
-
-            etapas = [
-                f"[{p.zona}] Preparando pedido", "Pedido recogido en el local",
-                f"Saliendo hacia {p.direccion}", "A 3 km del destino", "A 2 km del destino",
-                "A 1 km del destino", f"Llegando a zona de {p.zona}", "Cerca del destino",
-                f"Llegando a {p.direccion}", f"Entregando a {p.cliente}",
-            ]
-            t_est = p.tiempo_estimado()
-            tiempo_por_paso = max(0.3, (t_est / 10))
-            info.config(text=f"Destino: {p.direccion} | Zona: {p.zona} | Repartidor: {p.repartidor}")
+            self.sistema.actualizar_estado(p.id_pedido, "En Camino", "Simulación")
+            
             barra["value"] = 0
-            barra["maximum"] = len(etapas)
-
+            barra["maximum"] = 5
             def paso(i=0):
-                if i >= len(etapas):
+                if i >= 5:
                     self.sistema.actualizar_estado(p.id_pedido, "Entregado")
-                    etiqueta_paso.config(text=f"Pedido #{p.id_pedido} entregado con exito!")
-                    messagebox.showinfo("Entregado", f"Pedido #{p.id_pedido} entregado a {p.cliente}!")
+                    messagebox.showinfo("Éxito", "Pedido Entregado")
                     self.pantalla_simulacro()
                     return
-                etiqueta_paso.config(text=etapas[i])
                 barra["value"] = i + 1
-                self.after(int(tiempo_por_paso * 1000), lambda: paso(i + 1))
-
+                self.after(500, lambda: paso(i + 1))
             paso()
 
-        tk.Button(self.content, text="Iniciar Simulacro", bg=COLOR_ACENTO, fg="white",
-                  relief="flat", padx=12, pady=6, command=iniciar).pack(anchor="w", pady=8)
+        tk.Button(self.content, text="Iniciar", bg=COLOR_ACENTO, fg="white",
+                  relief="flat", padx=10, pady=4, command=iniciar).pack(anchor="w", pady=4)
 
-    # ---------- 13. Ver Historial de Cambios ----------
+    # ---------- 13. Ver Historial ----------
     def pantalla_historial(self):
         self._limpiar_content("Historial de Cambios")
         tree = self._crear_treeview(self.content, [
-            ("id", "ID", 50), ("cliente", "Cliente", 160), ("zona", "Zona", 90), ("estado", "Estado", 110)
-        ], alto=15)
-        tree.pack(fill="x", pady=8)
+            ("id", "ID", 40), ("cliente", "Cliente", 130), ("estado", "Estado", 90)
+        ], alto=10)
+        tree.pack(fill="x", pady=4)
         for p in self.sistema.pedidos.values():
-            tree.insert("", "end", iid=str(p.id_pedido),
-                        values=(p.id_pedido, p.cliente, p.zona, p.estado), tags=(p.estado,))
+            tree.insert("", "end", iid=str(p.id_pedido), values=(p.id_pedido, p.cliente, p.estado))
 
         def ver(event=None):
             sel = tree.selection()
             if not sel:
                 return
             p = self.sistema.buscar_pedido(int(sel[0]))
-            texto = f"Historial de Cambios - Pedido #{p.id_pedido}\n{'=' * 45}\n"
+            texto = ""
             for entry in p.historial:
                 texto += f"[{entry['estado']}] {entry['fecha']} - {entry['detalle']}\n"
             self._mostrar_texto_popup(f"Historial #{p.id_pedido}", texto)
 
         tree.bind("<Double-1>", ver)
-        tk.Label(self.content, text="Doble click para ver el historial del pedido.",
-                  bg=COLOR_FONDO, fg="#666").pack(anchor="w")
 
-    # ---------- Salir ----------
     def al_cerrar(self):
-        ok, msg = self.sistema.guardar_datos()
-        if not ok:
-            messagebox.showerror("Error al guardar", msg)
+        self.sistema.guardar_datos()
         self.destroy()
 
 
