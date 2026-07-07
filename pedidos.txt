@@ -1,0 +1,102 @@
+{
+  "contador_id": 4,
+  "pedidos": {
+    "1": {
+      "id_pedido": 1,
+      "cliente": "alejandro",
+      "direccion": "av chaco 2100",
+      "telefono": "3625784567",
+      "zona": "Sur",
+      "total_productos": 24500.0,
+      "metodo_pago": "Mercado Pago",
+      "prioridad": "Normal",
+      "observaciones": "",
+      "repartidor": "Jose Ramirez",
+      "costo_envio": 1200,
+      "descuento": 2450.0,
+      "total_pagar": 23250.0,
+      "estado": "Entregado",
+      "fecha_hora": "2026-07-06 23:06",
+      "historial": [
+        {
+          "fecha": "2026-07-06 23:06",
+          "estado": "Pendiente",
+          "detalle": "Pedido creado"
+        },
+        {
+          "fecha": "2026-07-06 23:17",
+          "estado": "En Camino",
+          "detalle": "Estado cambiado a En Camino - Motivo: Iniciando simulacion de recorrido"
+        },
+        {
+          "fecha": "2026-07-06 23:17",
+          "estado": "Entregado",
+          "detalle": "Pedido entregado (simulacion de recorrido)"
+        }
+      ]
+    },
+    "2": {
+      "id_pedido": 2,
+      "cliente": "Franco",
+      "direccion": "av. alberdi 234",
+      "telefono": "2345678934",
+      "zona": "Centro",
+      "total_productos": 45000.0,
+      "metodo_pago": "Efectivo",
+      "prioridad": "Alta",
+      "observaciones": "",
+      "repartidor": "Ana Martinez",
+      "costo_envio": 800,
+      "descuento": 4500.0,
+      "total_pagar": 41300.0,
+      "estado": "Entregado",
+      "fecha_hora": "2026-07-06 23:27",
+      "historial": [
+        {
+          "fecha": "2026-07-06 23:27",
+          "estado": "Pendiente",
+          "detalle": "Pedido creado"
+        },
+        {
+          "fecha": "2026-07-06 23:43",
+          "estado": "En Camino",
+          "detalle": "Estado cambiado a En Camino"
+        },
+        {
+          "fecha": "2026-07-06 23:45",
+          "estado": "Entregado",
+          "detalle": "Estado cambiado a Entregado"
+        }
+      ]
+    },
+    "3": {
+      "id_pedido": 3,
+      "cliente": "maximiliano",
+      "direccion": "barranqueras diagonal peron 678",
+      "telefono": "3545897645",
+      "zona": "Sur",
+      "total_productos": 12350.0,
+      "metodo_pago": "Transferencia",
+      "prioridad": "Alta",
+      "observaciones": "",
+      "repartidor": "Jose Ramirez",
+      "costo_envio": 1200,
+      "descuento": 1235.0,
+      "total_pagar": 12315.0,
+      "estado": "En Camino",
+      "fecha_hora": "2026-07-06 23:43",
+      "historial": [
+        {
+          "fecha": "2026-07-06 23:43",
+          "estado": "Pendiente",
+          "detalle": "Pedido creado"
+        },
+        {
+          "fecha": "2026-07-06 23:43",
+          "estado": "En Camino",
+          "detalle": "Estado cambiado a En Camino"
+        }
+      ]
+    }
+  }
+}
