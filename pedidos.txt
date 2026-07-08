@@ -1,5 +1,5 @@
 {
-  "contador_id": 5,
+  "contador_id": 6,
   "pedidos": {
     "1": {
       "id_pedido": 1,
@@ -159,6 +159,30 @@
           "fecha": "2026-07-07 23:14",
           "estado": "Cancelado",
           "detalle": "Estado cambiado a Cancelado - Motivo: Sin stock"
+        }
+      ]
+    },
+    "5": {
+      "id_pedido": 5,
+      "cliente": "maximiliano",
+      "direccion": "santa fe 1530",
+      "telefono": "236578095",
+      "zona": "Norte",
+      "total_productos": 5876.0,
+      "metodo_pago": "Efectivo",
+      "prioridad": "Normal",
+      "observaciones": "",
+      "repartidor": "Carlos Gomez",
+      "costo_envio": 1200,
+      "descuento": 293.8,
+      "total_pagar": 6782.2,
+      "estado": "Pendiente",
+      "fecha_hora": "2026-07-08 00:37",
+      "historial": [
+        {
+          "fecha": "2026-07-08 00:37",
+          "estado": "Pendiente",
+          "detalle": "Pedido creado"
         }
       ]
     }

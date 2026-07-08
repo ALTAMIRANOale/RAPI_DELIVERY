@@ -420,6 +420,8 @@ class App(tk.Tk):
             self.after(300, lambda: messagebox.showinfo("Datos", self.sistema.mensaje_carga))
 
     def _construir_layout(self):
+        self.vcmd_numeros = (self.register(self._validar_solo_numeros), '%P')
+        
         sidebar = tk.Frame(self, bg=COLOR_SIDEBAR, height=110)
         sidebar.pack(side="top", fill="x")
 
@@ -478,7 +480,9 @@ class App(tk.Tk):
         tk.Label(f, text=etiqueta, bg=COLOR_FONDO, width=15, anchor="w",
                   font=("Segoe UI", 9)).pack(side="left")
         return f
-
+    def _validar_solo_numeros(self, texto):
+        return texto == "" or texto.isdigit()
+    
     def _crear_treeview(self, parent, columnas, alto=12):
         cols_ids = [c[0] for c in columnas]
         tree = ttk.Treeview(parent, columns=cols_ids, show="headings", height=alto)
@@ -521,7 +525,7 @@ class App(tk.Tk):
         e_direccion.pack(side="left")
 
         f3 = self._fila(form, "Telefono:")
-        e_telefono = tk.Entry(f3, width=24)
+        e_telefono = tk.Entry(f3, width=24, validate="key", validatecommand=self.vcmd_numeros)
         e_telefono.pack(side="left")
 
         f4 = self._fila(form, "Zona:")
