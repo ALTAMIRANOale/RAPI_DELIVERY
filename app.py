@@ -310,8 +310,7 @@ class GestionDelivery:
 # ========== PANTALLA DE INICIO (SPLASH MULTI-SECCIÓN) ==========
 class SplashScreen(tk.Frame):
     TEXTO_PUBLICITARIO = "Rapi\nLa forma más rápida\nde recibir lo que necesitás\ncuando lo necesitás,\nen toda Argentina."
-    TEXTO_SECCION2 = "Selecciona tu entorno\npara optimizar tus rutas\ny gestionar tus pedidos\nde forma inmediata."
-
+    
     def __init__(self, parent, on_continuar):
         super().__init__(parent, bg="white")
         self.on_continuar = on_continuar
@@ -322,7 +321,6 @@ class SplashScreen(tk.Frame):
 
         self._ya_inicio = False
         self.seccion_actual = 1
-        self.opcion_seleccionada = tk.StringVar(value="")
         self.canvas.bind("<Configure>", self._al_dibujar_primera_vez)
 
     def _al_dibujar_primera_vez(self, event):
@@ -345,18 +343,7 @@ class SplashScreen(tk.Frame):
         )
         self._animar_caida(-100, self.alto // 2 - 80, self._dibujar_boton_seccion1)
 
-    def _mostrar_seccion2(self):
-        self.canvas.delete("all")
-        self.texto_id = self.canvas.create_text(
-            self.ancho // 2, -100,
-            text=self.TEXTO_SECCION2,
-            font=("Segoe UI", 13, "bold"),
-            fill="#1F2733",
-            width=self.ancho - 40,
-            justify="center"
-        )
-        self._animar_caida(-100, self.alto // 2 - 120, self._dibujar_elementos_seccion2)
-
+    
     def _animar_caida(self, y_actual, y_destino, callback):
         if y_actual < y_destino:
             paso = max(3, int((y_destino - y_actual) * 0.1) + 1)
@@ -386,47 +373,9 @@ class SplashScreen(tk.Frame):
         for item in (circulo, flecha):
             self.canvas.tag_bind(item, "<Enter>", lambda e: self.canvas.config(cursor="hand2"))
             self.canvas.tag_bind(item, "<Leave>", lambda e: self.canvas.config(cursor=""))
-            self.canvas.tag_bind(item, "<Button-1>", lambda e: self._ir_a_seccion2())
+            self.canvas.tag_bind(item, "<Button-1>", lambda e: self._finalizar())
 
-    def _dibujar_elementos_seccion2(self):
-        frame_opciones = tk.Frame(self.canvas, bg="white")
-        self.canvas.create_window(self.ancho // 2, self.alto // 2 + 50, window=frame_opciones, anchor="center")
-
-        opciones = ["Modo Gestión Principal", "Modo Monitoreo Rápido", "Modo Soporte Técnico"]
-        for opt in opciones:
-            rb = tk.Radiobutton(
-                frame_opciones, text=opt, variable=self.opcion_seleccionada, value=opt,
-                bg="white", font=("Segoe UI", 10), activebackground="white",
-                command=self._actualizar_boton_seccion2
-            )
-            rb.pack(anchor="w", pady=4)
-
-        cx = self.ancho // 2
-        cy = self.alto - 100
-        radio = 30
-
-        self.circulo_s2 = self.canvas.create_oval(
-            cx - radio, cy - radio, cx + radio, cy + radio,
-            fill="#9E9E9E", outline="black", width=2
-        )
-        self.flecha_s2 = self.canvas.create_polygon(
-            cx - 8, cy - 10,
-            cx - 8, cy + 10,
-            cx + 12, cy,
-            fill="white", outline=""
-        )
-
-    def _actualizar_boton_seccion2(self):
-        if self.opcion_seleccionada.get():
-            self.canvas.itemconfig(self.circulo_s2, fill="#C62828")
-            for item in (self.circulo_s2, self.flecha_s2):
-                self.canvas.tag_bind(item, "<Enter>", lambda e: self.canvas.config(cursor="hand2"))
-                self.canvas.tag_bind(item, "<Leave>", lambda e: self.canvas.config(cursor=""))
-                self.canvas.tag_bind(item, "<Button-1>", lambda e: self._finalizar())
-
-    def _ir_a_seccion2(self):
-        self.seccion_actual = 2
-        self._mostrar_seccion2()
+    
 
     def _finalizar(self):
         self.destroy()
@@ -707,6 +656,11 @@ class App(tk.Tk):
             cb_zona, var_zona = self._combo(f3, list(ZONAS_CONFIG.keys()), p.zona)
             cb_zona.pack(side="left")
 
+            f4 = self._fila(form_frame, "Monto productos:")
+            e_monto = tk.Entry(f4, width=24)
+            e_monto.insert(0, str(p.total_productos))
+            e_monto.pack(side="left")
+
             def guardar():
                 kwargs = {}
                 if e_cliente.get().strip() and e_cliente.get().strip() != p.cliente:
@@ -715,6 +669,18 @@ class App(tk.Tk):
                     kwargs["direccion"] = e_direccion.get().strip()
                 if var_zona.get() != p.zona:
                     kwargs["zona"] = var_zona.get()
+
+                monto_texto = e_monto.get().strip()
+                if monto_texto:
+                    try:
+                        nuevo_monto = float(monto_texto)
+                        if nuevo_monto < 0:
+                            raise ValueError
+                        if nuevo_monto != p.total_productos:
+                            kwargs["total_productos"] = nuevo_monto
+                    except ValueError:
+                        messagebox.showerror("Error", "Ingrese un monto válido.")
+                        return
 
                 if kwargs:
                     cambios, _ = self.sistema.editar_pedido(p.id_pedido, **kwargs)
